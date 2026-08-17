@@ -107,6 +107,20 @@ setInterval(() => {
   }
 }, 60000).unref?.();
 
+// Always return a plain-string error message. Detailed internals are only
+// surfaced in development; production gets a generic message so nothing
+// sensitive (keys, hosts, stack internals) is ever sent to the browser.
+function safeError(e: unknown, fallback: string): string {
+  if (typeof e === "string" && e.trim()) return e;
+  if (e instanceof Error) {
+    const msg = e.message?.trim();
+    if (msg) {
+      return process.env.NODE_ENV === "production" ? fallback : msg;
+    }
+  }
+  return fallback;
+}
+
 // Helper to sanitize shop objects to prevent leaking backend secrets
 function sanitizeShopData(rawShop: any) {
   if (!rawShop || typeof rawShop !== "object") return rawShop;
@@ -527,8 +541,9 @@ export function createApp() {
         shopObj.termsOfService = shopObj.terms || shopObj.termsOfService;
       }
       res.json({ ok: true, data: { shop: shopObj } });
-    } catch (e: any) {
-      res.status(500).json({ ok: false, error: e?.message || "Unable to retrieve shop configuration" });
+    } catch (e) {
+      console.error("handleGetShop error:", e);
+      res.status(500).json({ ok: false, error: safeError(e, "Unable to retrieve shop configuration") });
     }
   };
 
@@ -615,9 +630,9 @@ export function createApp() {
       }
 
       res.json({ ok: true, data: catList });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ ok: false, error: e?.message || "Unable to retrieve categories" });
+    } catch (e) {
+      console.error("handleGetCategories error:", e);
+      res.status(500).json({ ok: false, error: safeError(e, "Unable to retrieve categories") });
     }
   };
 
@@ -661,8 +676,9 @@ export function createApp() {
         };
       });
       res.json({ ok: true, data: { statuses } });
-    } catch (e: any) {
-      res.status(500).json({ ok: false, error: e?.message || "Unable to retrieve status" });
+    } catch (e) {
+      console.error("handleGetStatus error:", e);
+      res.status(500).json({ ok: false, error: safeError(e, "Unable to retrieve status") });
     }
   };
 

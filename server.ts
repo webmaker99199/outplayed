@@ -1349,8 +1349,18 @@ export function createApp() {
   return app;
 }
 
+// Vercel auto-detects this project as an Express backend because `server.ts`
+// sits at the project root and imports `express`. Vercel requires that entry
+// file to either default-export the Express app or call `listen()` during
+// module startup. Without a default export the deployed serverless function
+// has no app to serve requests, so every route returns HTTP 500. Exporting
+// the app at module scope fixes that while keeping the Netlify function
+// (netlify/functions/api.ts), the Vercel /api function (api/index.ts), and
+// the standalone server (`npm start`) fully working.
+const app = createApp();
+export default app;
+
 export async function startServer() {
-  const app = createApp();
   const PORT = 3000;
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

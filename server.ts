@@ -13,11 +13,18 @@ function findDataFile(filename: string): string | null {
     path.join(process.cwd(), filename),
     path.resolve(filename),
     path.join(process.cwd(), "dist", filename),
-    path.join(process.cwd(), "public", filename),
-    path.join(__dirname, "..", filename),
-    path.join(__dirname, filename),
-    path.join(__dirname, "public", filename)
+    path.join(process.cwd(), "public", filename)
   ];
+  // `__dirname` is only available in CommonJS. The Vercel/Netlify serverless
+  // bundles run as ESM, where referencing it throws, so only add these
+  // candidates when it actually exists.
+  if (typeof __dirname !== "undefined") {
+    candidates.push(
+      path.join(__dirname, "..", filename),
+      path.join(__dirname, filename),
+      path.join(__dirname, "public", filename)
+    );
+  }
   for (const p of candidates) {
     try {
       if (fs.existsSync(p)) return p;
@@ -1379,8 +1386,13 @@ const isMainModule = (() => {
   if (isServerless) return false;
   try {
     if (!process.argv[1]) return false;
-    const currentFilePath = fileURLToPath(import.meta.url);
     const mainFilePath = path.resolve(process.argv[1]);
+    // `__filename` exists in CommonJS (the esbuild `dist/server.cjs` bundle);
+    // `import.meta.url` is only reliable in real ESM (tsx / serverless).
+    const currentFilePath =
+      typeof __filename !== "undefined"
+        ? path.resolve(__filename)
+        : fileURLToPath(import.meta.url);
     return currentFilePath === mainFilePath;
   } catch {
     return false;

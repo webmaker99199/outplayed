@@ -1,10 +1,12 @@
 import dotenv from "dotenv";
 
+export const isProduction = process.env.NODE_ENV === "production";
+
 // Load .env for local development. On Vercel/Netlify the real values come from
 // the platform's environment variables and are never bundled into the client.
-dotenv.config();
-
-export const isProduction = process.env.NODE_ENV === "production";
+// `quiet` suppresses dotenv's "injected env" log line, which is pure noise in
+// serverless function logs (there is no .env file in the deployment).
+dotenv.config({ quiet: isProduction });
 
 function envOr(name: string, fallback: string): string {
   const v = process.env[name];
@@ -20,7 +22,11 @@ function requiredSecret(name: string, devFallback: string): string {
   const v = process.env[name];
   if (v && v.trim()) return v.trim();
   if (isProduction) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(
+      `Missing required environment variable: ${name}. ` +
+        `Add it to your deployment platform's environment variables ` +
+        `(Vercel: Settings -> Environment Variables) and redeploy.`
+    );
   }
   return devFallback;
 }

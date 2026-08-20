@@ -53,7 +53,6 @@ export const config = {
     clientSecret: envOr("DISCORD_CLIENT_SECRET", ""),
   },
 
-  // Static Discord invite link surfaced on the shop page (guildmergers).
-  discordInviteUrl:
-    "https://discord.com/api/oauth2/authorize?response_type=code&client_id=884988587987324939&scope=identify+guilds+guilds.join&redirect_uri=https%3A%2F%2Fverify.guildmergers.com%2Fauthorized&state=MTUxMzEwMjc1OTQzMDE5MzI2NA&prompt=none",
+  // Static Discord invite link surfaced on the shop page.
+  discordInviteUrl: "https://discord.com/invite/V48gfAnuAa",
 } as const;

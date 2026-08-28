@@ -187,9 +187,13 @@ async function handleGetStatus(req: any, res: any) {
     } catch {
       products = [];
     }
-    // Status must reflect SellAuth only. Do not show local fallback products here,
-    // because they may no longer be listed or publicly available for purchase.
-    const statuses = products.map((p: any) => ({
+    // Status is limited to currently public SellAuth products. Private, deleted,
+    // and terminated products must never appear on the public status page.
+    const publicProducts = products.filter((p: any) => {
+      const visibility = String(p.visibility || "").toLowerCase();
+      return visibility === "public" && !p.deleted_at && !p.terminated_at;
+    });
+    const statuses = publicProducts.map((p: any) => ({
       id: p.id,
       name: p.name,
       productName: p.name,

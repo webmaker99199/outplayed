@@ -51,7 +51,7 @@
           carouselWrap.className = 'relative w-full';
           carouselWrap.innerHTML = `
             <div style="position: relative; width: 100%; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); user-select: none;">
-              <img src="${images[currentIndex]}" alt="${product.name || 'Product Image'} - Photo ${currentIndex + 1}" style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 1rem;" />
+              <img src="${images[currentIndex]}" alt="${product.name || 'Product Image'} - Photo ${currentIndex + 1}" style="display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; object-position: center; border-radius: 1rem;" />
               
               <button id="carousel-prev" aria-label="Previous image" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.25); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 30; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>

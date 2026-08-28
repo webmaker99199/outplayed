@@ -187,8 +187,8 @@ async function handleGetStatus(req: any, res: any) {
     } catch {
       products = [];
     }
-    if (!products.length) products = loadFallbackProducts();
-
+    // Status must reflect SellAuth only. Do not show local fallback products here,
+    // because they may no longer be listed or publicly available for purchase.
     const statuses = products.map((p: any) => ({
       id: p.id,
       name: p.name,

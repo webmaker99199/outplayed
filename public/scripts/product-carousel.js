@@ -1,6 +1,10 @@
 (function() {
   function initProductCarousel() {
     if (!window.location.pathname.startsWith('/products/')) return;
+    // The app renders asynchronously on a hard refresh. Never use a broad image
+    // fallback here: it can accidentally select and replace the header logo.
+    const main = document.querySelector('main');
+    if (!main) return;
     const pathParts = window.location.pathname.split('/');
     const slug = decodeURIComponent(pathParts[pathParts.length - 1] || '');
     if (!slug) return;
@@ -26,17 +30,18 @@
         const images = product.images;
 
         // Find image container or img element in main content
-        const targetImg = document.querySelector('main img') || document.querySelector('img[alt]');
-        if (!targetImg) return;
+        const targetImg = main.querySelector('img');
+        if (!targetImg || targetImg.closest('header, nav')) return;
 
         const imgContainer = targetImg.closest('.relative') || targetImg.parentElement;
-        if (!imgContainer) return;
+        if (!imgContainer || !main.contains(imgContainer) || imgContainer.closest('header, nav')) return;
 
         let carouselWrap = document.getElementById('sellauth-carousel-container');
         if (!carouselWrap) {
           carouselWrap = document.createElement('div');
           carouselWrap.id = 'sellauth-carousel-container';
           carouselWrap.dataset.slug = slug;
+          // Replace only a product image container that belongs to main.
           imgContainer.replaceWith(carouselWrap);
         }
 
@@ -128,5 +133,6 @@
 
   window.addEventListener('DOMContentLoaded', () => setTimeout(initProductCarousel, 500));
   window.addEventListener('popstate', () => setTimeout(initProductCarousel, 400));
-  setTimeout(initProductCarousel, 600);
+  // Wait for the product route to finish mounting before querying its image.
+  setTimeout(initProductCarousel, 1000);
 })();

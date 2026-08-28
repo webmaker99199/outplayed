@@ -6,23 +6,22 @@ iframe[src*="sellauth"], iframe[title*="SellAuth"], iframe[title*="checkout"], .
   display: block !important;
   width: 100% !important;
   min-width: 0 !important;
-  height: min(720px, calc(100dvh - 8rem)) !important;
-  min-height: 560px !important;
+  height: auto !important;
+  min-height: 900px !important;
   border: 0 !important;
 }
 /* Keep the checkout shell within the viewport while allowing its form to scroll. */
 .checkout-modal-scroll {
   width: min(100% - 2rem, 1440px);
   max-width: 1440px;
-  min-height: min(620px, calc(100dvh - 8rem));
-  max-height: min(90vh, calc(100dvh - 2rem));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  min-height: 900px;
+  max-height: none;
+  overflow: visible;
+  overscroll-behavior: auto;
 }
 @media (max-width: 640px) {
   .checkout-modal-scroll {
-    max-height: calc(100dvh - 1rem);
+    min-height: 760px;
     border-radius: 1rem;
   }
 }

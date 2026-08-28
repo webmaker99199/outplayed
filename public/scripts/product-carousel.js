@@ -26,7 +26,8 @@
         });
 
         const images = Array.isArray(product?.images) ? product.images.filter(Boolean) : [];
-        const streamableId = findStreamableId(product);
+        let showcasePlan = (Array.isArray(product?.plans) ? product.plans : []).find(plan => /showcase/i.test(String(plan?.name || plan?.title || plan?.label || '')));
+        const streamableId = findStreamableId(showcasePlan) || findStreamableId(product);
         if (!product || (!images.length && !streamableId)) return;
 
         // Find image container or img element in main content
@@ -49,7 +50,7 @@
         let currentIndex = 0;
 
         function findStreamableId(value) {
-          const fields = [value?.streamableId, value?.streamable, value?.video, value?.videoUrl, value?.description];
+          const fields = [value?.description, value?.streamableId, value?.streamable, value?.video, value?.videoUrl, value?.metadata?.description, value?.data?.description];
           for (const field of fields) {
             const match = String(field || '').match(/(?:https?:\/\/)?(?:www\.)?streamable\.com\/(?:[eo]\/)?([A-Za-z0-9]{4,})/i);
             if (match) return match[1];

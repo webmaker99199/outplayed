@@ -2,6 +2,7 @@ import { Router } from "express";
 import { config } from "../config.js";
 import { rateLimiter } from "../middleware/rateLimit.js";
 import { safeError } from "../middleware/errorHandler.js";
+import { getDiscordVouches } from "../services/discord-vouch.js";
 import * as sellauth from "../services/sellauth.js";
 import { loadFallbackProducts, loadFallbackShop } from "../utils/fallback.js";
 import {
@@ -94,11 +95,53 @@ async function handleGetSingleProduct(req: any, res: any) {
   }
 }
 
+function firstNonNegativeNumber(...values: any[]): number {
+  for (const value of values) {
+    const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  }
+  return 0;
+}
+
+function calculateReviewMetrics(reviews: any[]): { totalFeedbacks: number; avgRating: number } {
+  const ratings = reviews
+    .map((review) => {
+      const rawRating = review?.rating;
+      if (rawRating === undefined || rawRating === null || rawRating === "") return 5;
+      const rating = Number(rawRating);
+      return Number.isFinite(rating) && rating >= 0 && rating <= 5 ? rating : null;
+    })
+    .filter((rating): rating is number => rating !== null);
+
+  if (!ratings.length) return { totalFeedbacks: 0, avgRating: 0 };
+
+  const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+  return { totalFeedbacks: ratings.length, avgRating: Number(average.toFixed(2)) };
+}
+
+async function getLanderReviews(): Promise<any[]> {
+  try {
+    const vouches = await getDiscordVouches(100);
+    if (vouches.length) return vouches;
+  } catch (error) {
+    console.error("Discord vouches unavailable for shop metrics:", error);
+  }
+
+  try {
+    const feedbacks = await sellauth.getFeedbacks();
+    return feedbacks.length ? feedbacks : defaultReviews;
+  } catch {
+    return defaultReviews;
+  }
+}
+
 async function handleGetShop(req: any, res: any) {
   try {
     let shopObj: any = null;
+    let loadedFromSellAuth = false;
     try {
       shopObj = await sellauth.getShop();
+      loadedFromSellAuth = Boolean(shopObj && typeof shopObj === "object");
     } catch {
       shopObj = null;
     }
@@ -124,7 +167,25 @@ async function handleGetShop(req: any, res: any) {
       shopObj.refundPolicy = shopObj.refund_policy || shopObj.refundPolicy;
       shopObj.termsOfService = shopObj.terms || shopObj.termsOfService;
     }
-    res.json({ ok: true, data: { shop: shopObj } });
+
+    const reviews = await getLanderReviews();
+    const reviewMetrics = calculateReviewMetrics(reviews);
+    const totalSales = loadedFromSellAuth
+      ? firstNonNegativeNumber(
+          shopObj?.products_sold,
+          shopObj?.total_completed_invoices,
+          shopObj?.total_sales,
+          shopObj?.sales,
+        )
+      : 0;
+
+    res.json({
+      ok: true,
+      data: {
+        shop: shopObj,
+        metrics: { totalSales, ...reviewMetrics },
+      },
+    });
   } catch (e) {
     console.error("handleGetShop error:", e);
     res.status(500).json({ ok: false, error: safeError(e, "Unable to retrieve shop configuration") });
@@ -227,6 +288,26 @@ async function handleGetStatus(req: any, res: any) {
 
 async function handleGetReviews(req: any, res: any) {
   try {
+    try {
+      const vouches = await getDiscordVouches(18);
+      if (vouches.length) {
+        return res.json({
+          ok: true,
+          data: {
+            reviews: vouches.map((vouch) => ({
+              id: vouch.id,
+              rating: vouch.rating,
+              message: vouch.message,
+              author: { name: vouch.author.name, avatarUrl: vouch.author.avatarUrl },
+              createdAt: vouch.createdAt,
+            })),
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Discord vouches unavailable:", error);
+    }
+
     let list: any[] = [];
     try {
       list = await sellauth.getFeedbacks();
@@ -236,7 +317,7 @@ async function handleGetReviews(req: any, res: any) {
     if (list.length > 0) {
       const mapped = list.map((f: any, idx: number) => ({
         id: f.id || idx + 1,
-        rating: f.rating || 5,
+        rating: f.rating ?? 5,
         message: f.message || f.feedback || f.comment || "Amazing product and fast delivery!",
         author: {
           name: f.author_name || f.customer_email?.split("@")[0] || f.username || "Verified Customer",

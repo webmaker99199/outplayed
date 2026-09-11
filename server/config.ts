@@ -51,6 +51,9 @@ export const config = {
   discord: {
     clientId: envOr("DISCORD_CLIENT_ID", "884988587987324939"),
     clientSecret: envOr("DISCORD_CLIENT_SECRET", ""),
+    botToken: envOr("DISCORD_BOT_TOKEN", ""),
+    serverId: envOr("DISCORD_SERVER_ID", "1513102759430193264"),
+    vouchesChannelId: envOr("DISCORD_VOUCHES_CHANNEL_ID", "1513104062109716520"),
   },
 
   // Static Discord invite link surfaced on the shop page.

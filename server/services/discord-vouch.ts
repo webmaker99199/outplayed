@@ -74,12 +74,6 @@ function isPublishable(vouch: DiscordVouch, sourceAuthor: any, hasReviewerEmbed:
   return true;
 }
 
-function score(vouch: DiscordVouch): number {
-  const ageDays = Math.max(0, (Date.now() - Date.parse(vouch.createdAt)) / 86_400_000);
-  const recency = Number.isFinite(ageDays) ? Math.max(0, 30 - ageDays) : 0;
-  return vouch.rating * 100 + Math.min(vouch.message.length, 320) / 32 + recency;
-}
-
 export async function getDiscordVouches(limit = 18): Promise<DiscordVouch[]> {
   if (!config.discord.botToken || !config.discord.vouchesChannelId) return [];
   if (cachedVouches && cachedVouches.expiresAt > Date.now()) {
@@ -109,7 +103,13 @@ export async function getDiscordVouches(limit = 18): Promise<DiscordVouch[]> {
       isPublishable(vouch, message?.author, hasReviewerEmbed),
     )
     .map(({ vouch }: any) => vouch as DiscordVouch)
-    .sort((a: DiscordVouch, b: DiscordVouch) => score(b) - score(a));
+    // Discord returns newest messages first, but sort explicitly so the
+    // reviews page stays recent-first even if the upstream response changes.
+    .sort((a: DiscordVouch, b: DiscordVouch) => {
+      const bTime = Date.parse(b.createdAt);
+      const aTime = Date.parse(a.createdAt);
+      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+    });
 
   cachedVouches = { expiresAt: Date.now() + 60_000, value: vouches };
   return vouches.slice(0, limit);

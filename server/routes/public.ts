@@ -170,13 +170,10 @@ async function handleGetShop(req: any, res: any) {
 
     const reviews = await getLanderReviews();
     const reviewMetrics = calculateReviewMetrics(reviews);
+    // The storefront's sales figure represents completed invoices, not units
+    // sold or any other SellAuth counter.
     const totalSales = loadedFromSellAuth
-      ? firstNonNegativeNumber(
-          shopObj?.products_sold,
-          shopObj?.total_completed_invoices,
-          shopObj?.total_sales,
-          shopObj?.sales,
-        )
+      ? firstNonNegativeNumber(shopObj?.total_completed_invoices)
       : 0;
 
     res.json({
@@ -289,7 +286,7 @@ async function handleGetStatus(req: any, res: any) {
 async function handleGetReviews(req: any, res: any) {
   try {
     try {
-      const vouches = await getDiscordVouches(18);
+      const vouches = await getDiscordVouches(100);
       if (vouches.length) {
         return res.json({
           ok: true,

@@ -1,0 +1,6 @@
+{
+  "name": "Outplayed",
+  "description": "Premium game cheats and digital services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
